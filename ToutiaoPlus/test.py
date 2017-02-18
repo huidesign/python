@@ -34,28 +34,6 @@ def filter_with_shared_list(condition, share_list, elements):
         condition.release()
 
 
-def add_to_shared_list(condition, share_list, elements):
-    """add elements to shared list"""
-    if condition.acquire():
-        for item in elements:
-            if item not in share_list:
-                share_list.append(item)
-        condition.notify()
-        condition.release()
-
-
-def pop_from_shared_list(condition, share_list):
-    """pop element to shared list"""
-    if condition.acquire():
-        if len(share_list) > 0:
-            item = share_list.pop()
-        else:
-            item = None
-        condition.notify()
-        condition.release()
-        return item
-
-
 def group_page_process(start_page):
     """the main proc tp process a new page"""
     recommends, pics = deal_group_page(start_page)
