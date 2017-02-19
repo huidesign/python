@@ -13,6 +13,11 @@ socket.setdefaulttimeout(TIMEOUT)
 FILE_LOCATION = "E:\\newphoto\\crazy"
 
 
+class AppURLopener(urllib.request.FancyURLopener):
+    """dirive from FancyURLopenner"""
+    version = "Mozilla/5.0"
+
+
 def generate_full_url(full_url, short_url):
     """ generate new full url"""
     url_list = list(full_url.rpartition('/'))
@@ -38,10 +43,6 @@ def download_work(pics):
 
 def download_pictures(pic_url, file_name):
     """picture downloads"""
-    class AppURLopener(urllib.request.FancyURLopener):
-        """dirive from FancyURLopenner"""
-        version = "Mozilla/5.0"
-
     opener = AppURLopener()
     print("Download: ", pic_url)
     try:
@@ -67,7 +68,7 @@ def deal_group_page(url):
     image_pages = []
     next_pages = []  # next pages in current group page
     next_url = url
-    while next_url not in next_pages:
+    while next_url not in next_pages and next_url != None:
         next_pages.append(next_url)
         next_url = deal_current_page(next_url, recommend_pages, image_pages)
     return recommend_pages, (strip_group_id(url), image_pages)
@@ -76,7 +77,13 @@ def deal_group_page(url):
 def deal_current_page(url, recommend_pages, image_pages):
     """deal with web page"""
     # open current page and parse with beautiful soup
-    html_doc = urllib.request.urlopen(url).read()
+    opener = AppURLopener()
+    try:
+        html_doc = opener.open(url)
+        if html_doc.closed:
+            return None
+    except Exception as exception:
+        raise exception
     soup = BeautifulSoup(html_doc, "lxml", from_encoding='GB18030')
     # strip next page out from current page
     next_page = generate_full_url(url, soup.find(id="photoNext")["href"])

@@ -1,8 +1,11 @@
 """multithread spider"""
 import queue
 import threading
+import time
+import random
 from huiparse import deal_group_page
 from huiparse import download_work
+
 
 # max groups to traverse
 MAX_GROUPS_TO_TRAVERSE = 10
@@ -15,7 +18,7 @@ GROUP_TRAVERSED = []
 # producer and consumer
 CONDITION = threading.Condition()
 # the start group page
-START_PAGE = "http://www.361games.com/html/tu/316376.html"
+START_PAGE = "http://www.361games.com/html/tu/486426.html"
 
 
 def filter_with_shared_list(condition, share_list, elements):
@@ -36,22 +39,25 @@ def filter_with_shared_list(condition, share_list, elements):
 
 def group_page_process(start_page):
     """the main proc tp process a new page"""
+    print("CURRENTS: ", start_page)
     recommends, pics = deal_group_page(start_page)
-    # filter_with_shared_list(CONDITION, GROUP_TRAVERSED, recommends)
-    if len(recommends) != 0:
-        TRAVERSE_QUEUE.put(recommends)
     if len(pics) != 0:
         DOWNLOAD_QUEUE.put(pics)
+    if TRAVERSE_QUEUE.qsize() < 3:
+        filter_with_shared_list(CONDITION, GROUP_TRAVERSED, recommends)
+        if len(recommends) != 0:
+            TRAVERSE_QUEUE.put(recommends)
 
 
 def producer(name):
     """thread to parse the web page and generate the wanted contents"""
     while True:
-        # if DOWNLOAD_QUEUE.qsize() <= 100:
-        next_groups = TRAVERSE_QUEUE.get()
-        print('Producer %s:' % name)
-        for item in next_groups:
-            group_page_process(item[1])
+        if DOWNLOAD_QUEUE.qsize() <= 10:
+            next_groups = TRAVERSE_QUEUE.get()
+            print('Producer %s:' % name)
+            for item in next_groups:
+                group_page_process(item[1])
+                time.sleep(random.random())
 
 
 def consumer(name):
@@ -69,6 +75,6 @@ if __name__ == '__main__':
         p = threading.Thread(target=producer, args=('zhanghui',))
         p.start()
 
-    for i in range(4):
+    for i in range(2):
         c = threading.Thread(target=consumer, args=('wenjing',))
         c.start()
